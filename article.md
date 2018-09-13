@@ -22,9 +22,9 @@ The following diagram illustrates these methods and their differences:
 
 ![The 3 methods](/images/update_methods.png)
 
-### II. Implementations**
+### II. Implementations
 
-### III. Use cases**
+### III. Use cases
 
 Every developers updating Apollo cache has to ask himself which method is more appropriate to his use case, as all of them present both advantages and disadvantages. Here, we give tracks for each of these three methods.
 
