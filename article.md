@@ -1,24 +1,90 @@
 # TITLE
 
-Apollo Client is a technology used to perform Graphql queries in the front-end of an app. To avoid calling the same Graphql queries repeatedly to the server side, a method will consist in storing data locally, in the Apollo cache.
+Apollo Client is a javascript Graphql client. In order to make the best of Graphql APIs, Apollo Client uses cache system to store data locally and avoid duplicate queries.
 
-However, a problem may occur: in some specific cases, after a mutation which updated data stored in the back-end, Apollo will not always update its cache by itself in the front side. Therefore, the developers face the problem of forcing this cache update so that the modified data appear as expected in the app.
+However, working on a project with this stack, I encountered cache update issues. The cache would not always update as expected. I realized I did not really understand how Apollo client cache works under the hood...now I do ! ;)
 
-This article will briefly explain the structure of the Apollo cache and how the data is stored in it. From there, it will explain why the cache is not always updated by itself. At last, it will cover the 3 main methods used to force this update and discuss the different use cases of these methods.
+In this article, I will briefly explain the structure of the Apollo cache and how the data is stored in it. From there, I will explain why the cache is not always updated by itself. At last, I'll present the 3 main methods used to force this update and discuss different use cases.
 
 ### I. The Apollo cache structure
 
-Let's imagine a developer has to display a list of items, all the pokemons for instance (THE pokedex). Each pokemon has an id, a name and a level. To do so, he has one query at his disposal: getAllPokemons.
+Let's say you have to display a list of pokemons to create your own Pokedex app (you can find such a graphql API at https://graphql-pokemon.now.sh/, thanks [@lucasbento](https://github.com/lucasbento) :)). Each pokemon has an id, a name and an evolution. You can fetch the first 10 pokemons by calling the query:
+```
+{
+  pokemons(first: 10) {
+    id
+    name
+  }
+}
+```
 
-After calling this query when a user first arrives on the page where the pokemons should be displayed, the server will return a list of objects { id, name, level }. From there, two things will happen:
+After calling this query when a user first arrives on the page where the pokemons should be displayed, the server will return:
+```
+{
+  "data": {
+    "pokemons": [
+      {
+        "id": "UG9rZW1vbjowMDE=",
+        "name": "Bulbasaur",
+        "evolutions": [
+          {
+            "id": "UG9rZW1vbjowMDI=",
+            "name": "Ivysaur"
+          },
+          {
+            "id": "UG9rZW1vbjowMDM=",
+            "name": "Venusaur"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Apollo Client will store fetched data in its cache as follow:
+
+- A normalized dictionnary of the fetched objects with `__typename:id` as keys
+A normaliser
+```
+{
+  "data": {
+    "pokemons": [
+      {
+        "id": "UG9rZW1vbjowMDE=",
+        "name": "Bulbasaur",
+        "evolutions": [
+          {
+            "id": "UG9rZW1vbjowMDI=",
+            "name": "Ivysaur"
+          },
+          {
+            "id": "UG9rZW1vbjowMDM=",
+            "name": "Venusaur"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+- The query result with the query name as key and an array of `__typename:id` for all returned elements.
+FAIRE UN SCHEMA / CODE
+
+
+
+From there, two things will happen:
 
 - These objects will be placed in a global store with all entities, as a dictionnary.
 - In another store, the "getAllPokemons" query will only be associated to an array of ids: the ids of all the pokemons in this list.
 
+
+
 Therefore, when the user will come back later in this same page, the query will be called another time. However, no server side call will be made: Apollo will try to get the data from the local store. Two things will happen there too:
 
 - Apollo will look at the list of ids associated to "getAllPokemons"
-- From these ids, it will get the corresponding objects from the store
+- From these ids, it will get the corresponding objects from the store (very much like using foreign keys on a sql database)
 
 ### II. Understanding the udpate
 
@@ -47,9 +113,7 @@ The following diagram illustrates these methods and their differences:
 
 ![The 3 methods](/images/update_methods.png)
 
-### II. Implementations
-
-### III. Use cases
+### IV. Use cases
 
 Every developers updating Apollo cache has to ask himself which method is more appropriate to his use case, as all of them present both advantages and disadvantages. Here, we give tracks for each of these three methods.
 
